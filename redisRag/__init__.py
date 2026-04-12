@@ -1,0 +1,1 @@
+"""Pydantic using Redis Vector Database as RAG Project"""

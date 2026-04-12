@@ -1,3 +1,6 @@
 .venv/
 __pycache__
 uv.lock
+godot-docs-html-stable/
+redisRag/godot-docs-chunked/
+godot-docs-html-stable.zip
