@@ -1,0 +1,22 @@
+version: '0.1.0'
+
+index:
+  name: godot_doc
+  prefix: godot_docs
+
+fields:
+    - name: parent_folder
+      type: tag
+    - name: file_name
+      type: text
+    - name: file_contents
+      type: text
+    # Note: Vector Embedding Dimensions depends on Embedding Model
+    # Ex. Qwen3-Embedding-0.6B = 1024 Dimensions
+    - name: user_embedding
+      type: vector
+      attrs:
+        algorithm: flat
+        dims: 1024
+        distance_metric: cosine
+        datatype: float32

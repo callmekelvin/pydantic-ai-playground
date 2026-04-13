@@ -1,10 +1,31 @@
 ## Pydantic + Redis Vector Database as RAG
 
+## Instructions to Run
+
+1. Start Redis Docker Containers - `docker compose up -d`
+2. Start Llama.cpp Servers
+    - Embedding Server: `llama-server -m "<EMBEDDING_GGUF_FILE_NAME_AND_PATH>" --port 9090 --embedding`
+    - Chat Model Server: `llama-server -m "<CHAT_MODEL_GGUF_FILE_NAME_AND_PATH>" --port 8080`
+3. Update `schema.yml` to the Number of Embedding Demnsions supported by the Embedding Model
+    ```
+    # Note: Vector Embedding Dimensions depends on Embedding Model
+    # Ex. Qwen3-Embedding-0.6B = 1024 Dimensions
+    - name: user_embedding
+      type: vector
+      attrs:
+        algorithm: flat
+        dims: 1024
+        distance_metric: cosine
+        datatype: float32
+    ```
+4. Install `uv` Python Package Manager Framework
+<hr>
 
 ## Resources
 
 - https://pydantic.dev/docs/ai/examples/data-analytics/rag/
 - https://pydantic.dev/docs/ai/guides/embeddings/#_top
+- https://redis.io/docs/latest/develop/ai/redisvl/
 
 <hr>
 

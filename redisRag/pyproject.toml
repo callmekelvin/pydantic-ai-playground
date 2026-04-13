@@ -6,5 +6,6 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "pydantic-ai>=1.73.0",
+    "redisvl>=0.17.0",
     "requests>=2.33.0",
 ]
