@@ -19,13 +19,38 @@
     ```
 4. Install `uv` Python Package Manager Framework
 5. To retrieve the Godot Documentation and to build the Redis VL, run: `uv run prepareRAGStore.py`
-    - Notes: Embedding takes a long time, on an AMD RX-6700XT GPU, it takes 45 minutes for embedding to complete
-    - Saving Redis Snapshot (RDB File) from Docker to Local Directory
-        1. `docker exec -it redis_container redis-cli SAVE` or `docker exec -it redis_container redis-cli --rdb /data/dump.rdb`
-        2. `docker cp redis_container:/data/dump.rdb ./dump.rdb`
+    - Embedding takes a long time, on an AMD RX-6700XT GPU, it takes 45 minutes for embedding to complete
 7. Start Llama.cpp Chat Model Server
     - Chat Model Server: `llama-server -m "<CHAT_MODEL_GGUF_FILE_NAME_AND_PATH>" --port 8080`
 8. Run the Chat Agent: `uv run godotChat.py`
+
+<hr>
+
+## Redis Backups
+
+As embedding takes a long time, it makes sense to save a copy of the Redis VL state when embeddings are populated to prevent having to re-embed documents each time.
+
+Saving Redis Snapshot (RDB File) from Docker to Local Directory
+1. `docker exec -it redis_container redis-cli SAVE` or `docker exec -it redis_container redis-cli --rdb /data/dump.rdb`
+2. `docker cp redis_container:/data/dump.rdb ./dump.rdb`
+
+<br>
+
+Currently, the Redis VL Database features a docker volume bind mount with the `redis_data` folder
+- Hence, on termination of session, it will overwrite and save Redis Snapshot in this `redis_data` folder
+- A Backup RDB File has been saved under `redis_db_dump_with_embeddings.rdb`, which can be renamed and copied into `redis_data` as `dump.rdb` to restore the existing Embedded Documents
+
+<br>
+
+To start from a fresh Redis DB Instance, run the following in a Python Script:
+```
+async def cleanDatabase():
+    redis = RedisManager()
+    await redis.createRedisConnection()
+    await redis.cleanRedisVectorDatabase()
+
+asyncio.run(cleanDatabase())
+```
 
 <hr>
 
@@ -51,3 +76,5 @@
 6. In order to query the Vector Embedding Database, you will need to vector embed your Text Query
     - You will then be returned the closest documents/ chunks to the vector embedded Text Query in the vector space
     - You can also build a Vector Index (ANN Data Structures) to speed up Vector Embed Queries
+
+<hr>
