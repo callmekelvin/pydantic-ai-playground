@@ -10,30 +10,35 @@ def chunkDocuments():
     Chunk documents in parallel using multiple threads
     """
 
-    sourceFolderToChunkedFolderFileLst = prepareDirForChunking()
+    try:
+        sourceFolderToChunkedFolderFileLst = prepareDirForChunking()
 
-    numOfDocuments = len(sourceFolderToChunkedFolderFileLst)
-    noThreads = 4
-    threadPartitions = getThreadPartitionSizes(numOfDocuments, noThreads)
+        numOfDocuments = len(sourceFolderToChunkedFolderFileLst)
+        noThreads = 4
+        threadPartitions = getThreadPartitionSizes(numOfDocuments, noThreads)
 
-    threads = []
-    threadNo = 0
-    for partitions in threadPartitions:
-        t = threading.Thread(target=chunkingChildThread, 
-                             kwargs={ "workList": sourceFolderToChunkedFolderFileLst[partitions[0]: partitions[1]], "threadNo": threadNo }
-                            )
-        threads.append(t)
-        threadNo += 1
+        threads = []
+        threadNo = 0
+        for partitions in threadPartitions:
+            t = threading.Thread(target=chunkingChildThread, 
+                                kwargs={ "workList": sourceFolderToChunkedFolderFileLst[partitions[0]: partitions[1]], "threadNo": threadNo }
+                                )
+            threads.append(t)
+            threadNo += 1
 
-    # Start each thread
-    for t in threads:
-        t.start()
+        # Start each thread
+        for t in threads:
+            t.start()
 
-    # Wait for all threads to finish
-    for t in threads:
-        t.join()
+        # Wait for all threads to finish
+        for t in threads:
+            t.join()
 
-    return
+        return
+    
+    except Exception as e:
+        print("chunkDocuments Error: ", str(e))
+        raise e 
 
 def prepareDirForChunking():
     """
@@ -43,47 +48,52 @@ def prepareDirForChunking():
         List of (source_path, chunked_path) tuples for each file.
     """
 
-    current_working_dir = os.getcwd()
-    godot_folder_path = os.path.join(current_working_dir, godot_folder_name)
-    godot_sources_folder_path = os.path.join(godot_folder_path, "_sources")
-    godot_chunked_folder_path = os.path.join(current_working_dir, godot_chunked_folder_name)
+    try:
+        current_working_dir = os.getcwd()
+        godot_folder_path = os.path.join(current_working_dir, godot_folder_name)
+        godot_sources_folder_path = os.path.join(godot_folder_path, "_sources")
+        godot_chunked_folder_path = os.path.join(current_working_dir, godot_chunked_folder_name)
 
-    if not (os.path.isdir(godot_folder_path) and os.path.isdir(godot_sources_folder_path)):
-        print("Missing Godot Documentation - Please Retrieve Godot Documentation First")
+        if not (os.path.isdir(godot_folder_path) and os.path.isdir(godot_sources_folder_path)):
+            raise FileNotFoundError("Missing Godot Documentation - Please Retrieve Godot Documentation First")
 
-    # Ensure Clean Directory for Chunked Godot Docs
-    if os.path.isdir(godot_chunked_folder_path):
-        shutil.rmtree(godot_chunked_folder_path)
+        # Ensure Clean Directory for Chunked Godot Docs
+        if os.path.isdir(godot_chunked_folder_path):
+            shutil.rmtree(godot_chunked_folder_path)
+        
+        os.mkdir(godot_chunked_folder_path)
+
+        # TXT Files in _sources Folder contain raw Godot Documentation content, which is suitable for vectorisation
+        sourcesFolderDict = {}
+        for root, dir, files in os.walk(godot_sources_folder_path):
+            sourcesFolderDict[root] = files
+            # print(f"Directory Name: {root}\nFiles List: {files}\n")
+
+
+        # Create List Map of Godot Documentation Files to Chunk
+        # To prepare for chunking and threading work, create new directory for chunked Godot Documentation
+        sourceFolderToChunkedFolderFileLst = []
+        for dir, files in sourcesFolderDict.items():
+            # Get Directory's Relative Path from Godot Source Folder Dir
+            relDirPath = os.path.relpath(dir, godot_sources_folder_path)
+
+            # Generate New Godot Chunked Folder Dir
+            chunkedDirPath = os.path.join(godot_chunked_folder_path, relDirPath)
+
+            if not os.path.isdir(chunkedDirPath):
+                os.makedirs(chunkedDirPath)
+
+            for file in files:
+                sourceFilePath = os.path.join(dir, file)
+                chunkedFilePath = os.path.join(chunkedDirPath, file)
+
+                sourceFolderToChunkedFolderFileLst.append((sourceFilePath, chunkedFilePath))
+
+        return sourceFolderToChunkedFolderFileLst
     
-    os.mkdir(godot_chunked_folder_path)
-
-    # TXT Files in _sources Folder contain raw Godot Documentation content, which is suitable for vectorisation
-    sourcesFolderDict = {}
-    for root, dir, files in os.walk(godot_sources_folder_path):
-        sourcesFolderDict[root] = files
-        # print(f"Directory Name: {root}\nFiles List: {files}\n")
-
-
-    # Create List Map of Godot Documentation Files to Chunk
-    # To prepare for chunking and threading work, create new directory for chunked Godot Documentation
-    sourceFolderToChunkedFolderFileLst = []
-    for dir, files in sourcesFolderDict.items():
-        # Get Directory's Relative Path from Godot Source Folder Dir
-        relDirPath = os.path.relpath(dir, godot_sources_folder_path)
-
-        # Generate New Godot Chunked Folder Dir
-        chunkedDirPath = os.path.join(godot_chunked_folder_path, relDirPath)
-
-        if not os.path.isdir(chunkedDirPath):
-            os.makedirs(chunkedDirPath)
-
-        for file in files:
-            sourceFilePath = os.path.join(dir, file)
-            chunkedFilePath = os.path.join(chunkedDirPath, file)
-
-            sourceFolderToChunkedFolderFileLst.append((sourceFilePath, chunkedFilePath))
-
-    return sourceFolderToChunkedFolderFileLst
+    except Exception as e:
+        print("prepareDirForChunking Error: ", str(e))
+        raise e 
 
 def getThreadPartitionSizes(numOfDocuments, noThreads = 4):
     """
@@ -136,38 +146,43 @@ def chunkDocumentUnitOfWork(sourcePath, resultPath):
     Each chunk is saved as a separate file in the specified result path.
     """
 
-    resultDirName = os.path.dirname(resultPath)
-    resultChunkBaseName = os.path.basename(resultPath)
+    try:
+        resultDirName = os.path.dirname(resultPath)
+        resultChunkBaseName = os.path.basename(resultPath)
 
-    # Open Source File
-    with open(sourcePath, "r", encoding="utf-8") as sourceFile:
+        # Open Source File
+        with open(sourcePath, "r", encoding="utf-8") as sourceFile:
 
-        # Perform Chunking based on Num Of Lines in File
-        sourceFileLines = sourceFile.readlines()
-        numOfLines = len(sourceFileLines)
+            # Perform Chunking based on Num Of Lines in File
+            sourceFileLines = sourceFile.readlines()
+            numOfLines = len(sourceFileLines)
 
-        # Fixed Chunking Based Off Lines - 200 Lines
-        # Overlap Chunking - 10% Line Overlap to ensure Context is lost between chunks
-        chunkSize = 200
-        overlap = 0.9 * 200
-        chunkList = getOverlappingChunks(numOfLines, chunkSize, overlap)
-        # print(chunkList)
+            # Fixed Chunking Based Off Lines - 200 Lines
+            # Overlap Chunking - 10% Line Overlap to ensure Context is lost between chunks
+            chunkSize = 200
+            overlap = 0.9 * 200
+            chunkList = getOverlappingChunks(numOfLines, chunkSize, overlap)
+            # print(chunkList)
 
-        chunkNo = 0
-        for chunk in chunkList:
-            resultChunkedFileName = f"chunk-{chunkNo}-{resultChunkBaseName}"
-            resultChunkedFilePath = os.path.join(resultDirName, resultChunkedFileName)
+            chunkNo = 0
+            for chunk in chunkList:
+                resultChunkedFileName = f"chunk-{chunkNo}-{resultChunkBaseName}"
+                resultChunkedFilePath = os.path.join(resultDirName, resultChunkedFileName)
 
-            # Write chunks to each file
-            with open(resultChunkedFilePath, "w", encoding="utf-8") as destFile:
-                destFile.writelines(sourceFileLines[chunk[0] : chunk[1]])
-                chunkNo += 1
-            
-            destFile.close()
+                # Write chunks to each file
+                with open(resultChunkedFilePath, "w", encoding="utf-8") as destFile:
+                    destFile.writelines(sourceFileLines[chunk[0] : chunk[1]])
+                    chunkNo += 1
+                
+                destFile.close()
 
-    sourceFile.close()
+        sourceFile.close()
 
-    return
+        return
+    
+    except Exception as e:
+        print("chunkDocumentUnitOfWork Error: Error chunking allocated files to chunk", str(e))
+        raise e 
 
 def chunkingChildThread(workList, threadNo):
     """
@@ -177,7 +192,7 @@ def chunkingChildThread(workList, threadNo):
     for work in workList:
         chunkDocumentUnitOfWork(work[0], work[1])
 
-    print(f"Thread {threadNo}: Work Complete")
+    print(f"Chunking Thread {threadNo}: Work Complete")
     return
 
 # chunkDocuments()

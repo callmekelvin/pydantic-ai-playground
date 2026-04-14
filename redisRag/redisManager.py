@@ -33,27 +33,44 @@ class RedisManager:
             return
 
         except Exception as e:
-            print(str(e))
+            print("RedisManager.createRedisConnection Error - Error creating connection/ index", str(e))
+            raise e
 
     async def addKeys(self, data: list[GodotDocFile], id_field = None):
-        keys = await self._index.load(data, id_field=id_field)
-        return
+        try:
+            await self._index.load(data, id_field=id_field)
+            return
+        
+        except Exception as e:
+            print("RedisManager.addKeys Error - Error loading Redis data", str(e))
+            raise e
+
 
     async def query(self, vector, noResults, fieldsToReturn=["parent_folder", "file_name", "file_contents"]):
-        query = VectorQuery(
-            vector=vector,
-            vector_field_name="user_embedding",
-            return_fields=fieldsToReturn,
-            num_results=noResults
-        )
+        try:
+            query = VectorQuery(
+                vector=vector,
+                vector_field_name="user_embedding",
+                return_fields=fieldsToReturn,
+                num_results=noResults
+            )
 
-        results = await self._index.query(query)
-        # print(results)
+            results = await self._index.query(query)
+            # print(results)
 
-        return results
+            return results
+
+        except Exception as e:
+            print("RedisManager.query Error - Error querying Redis VL", str(e))
+            raise e
 
     async def cleanRedisVectorDatabase(self):
-        index_exists = await self._index.exists()
+        try:
+            index_exists = await self._index.exists()
 
-        if (index_exists):
-            await self._index.delete(drop=True)
+            if (index_exists):
+                await self._index.delete(drop=True)
+
+        except Exception as e:
+            print("RedisManager.cleanRedisVectorDatabase Error - Error clearing database", str(e))
+            raise e
