@@ -3,9 +3,8 @@
 ## Instructions to Run
 
 1. Start Redis Docker Containers - `docker compose up -d`
-2. Start Llama.cpp Servers
+2. Start Llama.cpp Embedding Server
     - Embedding Server: `llama-server -m "<EMBEDDING_GGUF_FILE_NAME_AND_PATH>" --port 9090 --embedding`
-    - Chat Model Server: `llama-server -m "<CHAT_MODEL_GGUF_FILE_NAME_AND_PATH>" --port 8080`
 3. Update `schema.yml` to the Number of Embedding Demnsions supported by the Embedding Model
     ```
     # Note: Vector Embedding Dimensions depends on Embedding Model
@@ -19,6 +18,12 @@
         datatype: float32
     ```
 4. Install `uv` Python Package Manager Framework
+5. To retrieve the Godot Documentation and to build the Redis VL, run: `uv run prepareRAGStore.py`
+    - Notes: Embedding takes a long time, on an AMD RX-6700XT GPU, it takes 45 minutes for embedding to complete
+7. Start Llama.cpp Chat Model Server
+    - Chat Model Server: `llama-server -m "<CHAT_MODEL_GGUF_FILE_NAME_AND_PATH>" --port 8080`
+8. Run the Chat Agent: `uv run godotChat.py`
+
 <hr>
 
 ## Resources
