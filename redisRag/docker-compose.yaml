@@ -5,6 +5,10 @@ services:
     container_name: redis_container
     ports:
       - "6379:6379"
+    # Bind Mount - Loads Existing Redis RDB Snapshot
+    # Refer to README to purge Redis DB
+    volumes:
+      - ./redis_data:/data
 
   # https://hub.docker.com/r/redis/redisinsight
   redisinsight:

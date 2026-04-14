@@ -20,6 +20,9 @@
 4. Install `uv` Python Package Manager Framework
 5. To retrieve the Godot Documentation and to build the Redis VL, run: `uv run prepareRAGStore.py`
     - Notes: Embedding takes a long time, on an AMD RX-6700XT GPU, it takes 45 minutes for embedding to complete
+    - Saving Redis Snapshot (RDB File) from Docker to Local Directory
+        1. `docker exec -it redis_container redis-cli SAVE` or `docker exec -it redis_container redis-cli --rdb /data/dump.rdb`
+        2. `docker cp redis_container:/data/dump.rdb ./dump.rdb`
 7. Start Llama.cpp Chat Model Server
     - Chat Model Server: `llama-server -m "<CHAT_MODEL_GGUF_FILE_NAME_AND_PATH>" --port 8080`
 8. Run the Chat Agent: `uv run godotChat.py`
