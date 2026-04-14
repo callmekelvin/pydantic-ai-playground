@@ -1,6 +1,22 @@
-## Pydantic + Redis Vector Database as RAG
+## Pydantic AI + Redis Vector Database as RAG
 
-## Instructions to Run
+## Introduction
+
+This project demonstrates a Retrieval-Augmented Generation (RAG) system built using Pydantic AI and a Redis Vector Database (Redis VL) as the core retrieval layer.
+
+In this implementation, the official Godot Game Engine documentation has been retrieved, processed, and prepared for semantic search. The documentation is first split into meaningful chunks, then each chunk is transformed into vector embeddings. These embeddings, along with their corresponding original text, are stored in the Redis Vector Database, enabling fast and efficient similarity-based retrieval.
+
+Using Pydantic AI, an AI agent is built on top of this retrieval pipeline to query the Vector Store and dynamically fetch the most relevant documentation chunks in response to user prompts. This allows the agent to ground its answers directly in the Godot documentation rather than relying solely on general training data.
+
+The primary aim of this project is to create a highly accurate AI assistant that can directly reference and reason over official Godot Engine documentation, helping developers build video games more effectively by providing precise, context-aware guidance within the Godot ecosystem.
+
+<a href="results.md">Link to Results/ Screenshots</a>
+
+<img src="images/Screenshot from 2026-04-14 21-29-47.png" alt="AI Agent Response" />
+
+<hr>
+
+## Getting Started
 
 1. Start Redis Docker Containers - `docker compose up -d`
 2. Start Llama.cpp Embedding Server
@@ -18,7 +34,7 @@
         datatype: float32
     ```
 4. Install `uv` Python Package Manager Framework
-5. To retrieve the Godot Documentation and to build the Redis VL, run: `uv run prepareRAGStore.py`
+5. To retrieve the Godot Documentation and to re-build the Redis VL, run: `uv run prepareRAGStore.py`
     - Embedding takes a long time, on an AMD RX-6700XT GPU, it takes 45 minutes for embedding to complete
 7. Start Llama.cpp Chat Model Server
     - Chat Model Server: `llama-server -m "<CHAT_MODEL_GGUF_FILE_NAME_AND_PATH>" --port 8080`
@@ -65,16 +81,21 @@ asyncio.run(cleanDatabase())
 ## Retrieval Augmented Generation (RAG) Steps:
 1. Prepare raw documents (Ex. Text, Files, Images, etc)
     - Collect , clean, normalise data/ documents and add metadata, etc
+    - `redisRag/retrieveDocuments.py`
 2. Chunking you raw documents (Optional for Small Documents)
     - Chunking is the process of partitioning large documents into smaller chunks, which would be then be vector embedded
     - Chunking allows for higher precision matches/ retrieval when vector embedded, allowing for better partial matching within documents
+    - `redisRag/chunkDocuments.py`
 3. Select Embedding Model
     - Choose Embedding Model depending on your use case (Ex. Text, Files, Images, etc)
 4. Create Vector Embedding Database
+    - `redisRag/redisManager.py`
 5. Populate the Vector Embedding Database with Vector Embedding Entries
     - This database will contain vector embeddings of chunks/ raw documents
+    - `redisRag/embedDocuments.py`
 6. In order to query the Vector Embedding Database, you will need to vector embed your Text Query
     - You will then be returned the closest documents/ chunks to the vector embedded Text Query in the vector space
     - You can also build a Vector Index (ANN Data Structures) to speed up Vector Embed Queries
+    - `redisRag/godotChat.py`
 
 <hr>
